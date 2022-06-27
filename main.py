@@ -3,9 +3,9 @@ from settings import *
 
 class Game:
     def __init__(self):
-
         pygame.init()
         self.screen = pygame.display.set_mode((width, height))
+        pygame.display.set_caption('Zelda')
         self.clock = pygame.time.Clock()
 
     def run(self):
