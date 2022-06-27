@@ -3,4 +3,6 @@ from settings import *
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self,pos,groups):
-        pass
+        super().__init__()
+        self.image = pygame.image.load('repos/zelda-like/graphics/rock.png').convert_alpha()
+        self.rect = self.image.get_rect(topleft = pos)
