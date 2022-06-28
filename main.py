@@ -5,7 +5,6 @@ from level import Level
 
 class Game:
     def __init__(self):
-
         
         pygame.init()
         self.screen = pygame.display.set_mode((width, height))
@@ -13,6 +12,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.level = Level()
+
 
     def run(self):
         while True:
