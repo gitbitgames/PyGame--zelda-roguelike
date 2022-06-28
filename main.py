@@ -5,14 +5,13 @@ from level import Level
 
 class Game:
     def __init__(self):
-        
+        pygame.mixer.pre_init(44100, 16, 2, 4096)
         pygame.init()
-        self.screen = pygame.display.set_mode((width, height))
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption('Zelda')
         self.clock = pygame.time.Clock()
 
         self.level = Level()
-
 
     def run(self):
         while True:

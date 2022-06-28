@@ -1,3 +1,4 @@
+import sys
 import pygame
 from settings import *
 
@@ -10,8 +11,12 @@ class Player(pygame.sprite.Sprite):
 
         self.direction = pygame.math.Vector2()
         self.speed = 5
-
         self.obstacle_sprites = obstacle_sprites
+
+        self.attacking = False
+        self.attack_cooldown = 400
+        self.attack_time = 0
+
 
     def input(self):
         keys = pygame.key.get_pressed()
@@ -30,6 +35,17 @@ class Player(pygame.sprite.Sprite):
         else:
             self.direction.x = 0
 
+        if keys[pygame.K_ESCAPE]:
+            sys.exit()
+
+        if keys[pygame.K_SPACE] and not self.attacking:
+            self.attacking = True
+            pass
+
+        if keys[pygame.K_LCTRL] and not self.attacking:
+            self.attacking = True
+            pass
+
     def move(self, speed):
         if self.direction.magnitude() != 0:
             self.direction = self.direction.normalize()
@@ -40,7 +56,6 @@ class Player(pygame.sprite.Sprite):
         self.hitbox.y += self.direction.y * speed
         self.collision('vertical')
         self.rect.center = self.hitbox.center
-
 
     def collision(self, direction):
         if direction == 'horizontal':
@@ -59,6 +74,11 @@ class Player(pygame.sprite.Sprite):
                     if self.direction.y < 0:
                         self.hitbox.top = sprite.hitbox.bottom
 
+    def cooldowns(self):
+        pass
+
     def update(self):
         self.input()
         self.move(self.speed)
+
+        
