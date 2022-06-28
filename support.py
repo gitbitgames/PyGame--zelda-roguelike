@@ -20,7 +20,8 @@ def import_folder(path):
             full_path = path + '/' + image
             paths.append(full_path)
         
-        paths.sort(key = lambda x: x[-6:-4] )
+        if path[-2:] == 'ts':
+            paths.sort(key = lambda x: x[-6:-4] )
         for element in paths:
             image_surf = pygame.image.load(element).convert_alpha()
             surface_list.append(image_surf)

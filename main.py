@@ -11,6 +11,10 @@ class Game:
         pygame.display.set_caption('Zelda')
         self.clock = pygame.time.Clock()
 
+        # Add support for USB controllers
+        # pygame.joystick.init()
+        # joysticks = [ pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count()) ]
+
         self.level = Level()
 
     def run(self):
