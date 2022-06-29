@@ -14,6 +14,9 @@ class Level:
         self.visible_sprites = YSortCameraGroup()
         self.obstacle_sprites = pygame.sprite.Group()
         self.create_map()
+        
+        self.current_attack = None
+        self.ui = UI()
 
     def create_map(self):
         layouts = {
@@ -45,15 +48,23 @@ class Level:
                             new_choice = graphics['objects'][int(col)]
                             Tile((x, y), [self.visible_sprites, self.obstacle_sprites], 'object', new_choice)
 
-        self.player = Player((2000, 1430), [self.visible_sprites], self.obstacle_sprites)
+        self.player = Player((2000, 1430), [self.visible_sprites], self.obstacle_sprites, self.create_attack, self.destroy_attack)
 
     def create_attack(self):
-        new_weapon = Weapon(self.player, [self.visible_sprites])
+        self.current_attack = Weapon(self.player, [self.visible_sprites])
+        
+
+    def destroy_attack(self):
+        if self.current_attack:
+            self.current_attack.kill()
+        self.current_attack = None
+
 
     def run(self):
         self.visible_sprites.custom_draw(self.player)
         self.visible_sprites.update()
         debug(self.player.status)
+
 
 class YSortCameraGroup(pygame.sprite.Group):
     def __init__(self):
