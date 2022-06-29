@@ -31,7 +31,7 @@ class Player(pygame.sprite.Sprite):
         self.weapon = list( weapon_data.keys() )[self.weapon_index]
         self.change_weapon = False
         self.change_timer = 0
-        self.change_cooldown = 100
+        self.change_cooldown = 180
 
         # stats
         self.stats = {
@@ -44,7 +44,7 @@ class Player(pygame.sprite.Sprite):
 
         self.health = self.stats['health']
         self.energy = self.stats['energy']
-        self.exp = 0
+        self.exp = 123
         self.speed = self.stats['speed']
 
         ## Animations

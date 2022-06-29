@@ -8,6 +8,7 @@ class Game:
         pygame.mixer.pre_init(44100, 16, 2, 4096)
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        # self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         pygame.display.set_caption('Zelda')
         self.clock = pygame.time.Clock()
 
