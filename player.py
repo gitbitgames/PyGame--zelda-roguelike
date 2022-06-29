@@ -53,12 +53,12 @@ class Player(pygame.sprite.Sprite):
 
         ### Magic selection
         self.magic_index = 0
-        self.magic = list( magic_data.keys() )[self.magic_index]
+        self.style = list( magic_data.keys() )[self.magic_index]
         self.change_magic = False
         self.change_mag_timer = 0
         self.change_mag_cooldown = 180
-        self.magic_cost = magic_data[self.magic]['cost']
-        self.magic_strength = magic_data[self.magic]['strength']
+        self.magic_cost = magic_data[self.style]['cost']
+        self.magic_strength = magic_data[self.style]['strength']
 
         ### Stats
         self.stats = {
@@ -71,8 +71,8 @@ class Player(pygame.sprite.Sprite):
         self.health = self.stats['health']
         self.energy = self.stats['energy']
         self.exp = 123
-        self.speed = self.stats['speed']
-        self.magic_power = self.stats['magic']
+        self.speed = self.stats['speed'] + weapon_data[self.weapon]['speed']
+        self.magic_power = self.stats['magic'] + self.magic_strength
 
         ### Animations
         self.animations = self.import_player_assets()
@@ -150,7 +150,7 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_LCTRL] and not self.magicking:
             self.magicking = True
             self.magic_time = pygame.time.get_ticks()
-            self.create_magic(self.style, self.magic_power, self.cost)
+            self.create_magic(self.style, self.magic_power, self.magic_cost)
 
         ### Retrieves a status on what the player sprite is currently doing
     def get_status(self):
@@ -158,7 +158,7 @@ class Player(pygame.sprite.Sprite):
             if not 'idle' in self.status and not 'attack' in self.status:
                 self.status = self.status + '_idle'
 
-        if self.attacking:
+        if self.attacking or self.magicking:
             self.direction.x = 0
             self.direction.y = 0
             if not 'attack' in self.status:
@@ -172,7 +172,6 @@ class Player(pygame.sprite.Sprite):
     def move(self, speed):
         if self.direction.magnitude() != 0:
             self.direction = self.direction.normalize()
-
 
         self.hitbox.x += self.direction.x * speed
         self.collision('horizontal')
@@ -216,13 +215,14 @@ class Player(pygame.sprite.Sprite):
         self.attack_cooldown = weapon_data[self.weapon]['cooldown']
 
     def _change_magic(self):
+        self.magic_index += 1
+
         length = len(magic_data.keys())
-        if self.magic_index < 0:
-            self.magic_index = length-1
         if self.magic_index > length-1:
             self.magic_index = 0
-        self.magic_power = magic_data[self.magic]['strength']
-        self.magic_cost = magic_data[self.magic]['cost']
+        self.style = list( magic_data.keys() )[self.magic_index]
+        self.magic_power = magic_data[self.style]['strength']
+        self.magic_cost = magic_data[self.style]['cost']
 
 
         ### Governs player cooldowns for both switching weapons/magic, using weapons/magic

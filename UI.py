@@ -16,6 +16,12 @@ class UI:
             weapon = pygame.image.load(path).convert_alpha()
             self.weapon_graphics.append(weapon)
 
+        self.magic_graphics = []
+        for magic in magic_data.values():
+            path = magic['graphic']
+            magic = pygame.image.load(path).convert_alpha()
+            self.magic_graphics.append(magic)
+
     def show_bar(self, current, max_amount, bg_rect, color):
         # Draw background then H/E bars
         pygame.draw.rect(self.display_surface, UI_BG_COLOR, bg_rect)
@@ -51,11 +57,19 @@ class UI:
 
     def weapon_overlay(self, weapon_index, player):
         bg_rect = self.selection_box(10, 620, player.change_weapon) # Weapon
-        self.selection_box(80, 630, False) # Magic
         weapon_surf = self.weapon_graphics[weapon_index]
         weapon_rect = weapon_surf.get_rect(center = bg_rect.center)
 
         self.display_surface.blit(weapon_surf, weapon_rect)
+
+    def magic_overlay(self, magic_index, player):
+        bg_rect = self.selection_box(80, 630, player.change_magic) # Magic
+        magic_surf = self.magic_graphics[magic_index]
+        magic_rect = magic_surf.get_rect(center = bg_rect.center)
+
+        self.display_surface.blit(magic_surf, magic_rect)
+
+
 
     def display(self, player):
         self.show_bar(
@@ -66,5 +80,6 @@ class UI:
         )
         self.show_exp(player.exp)
         self.weapon_overlay(player.weapon_index, player)
+        self.magic_overlay(player.magic_index, player)
 
 

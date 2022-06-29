@@ -31,7 +31,6 @@ class Level:
             'grass': import_folder('./img/Terrain/Grass'),
             'objects': import_folder('./img/Terrain/Objects')
         }
-        # print(list(graphics['objects']))
         for style, layout in layouts.items():
             for row_index, row in enumerate(layout):
                 for col_index, col in enumerate(row):
@@ -74,7 +73,7 @@ class Level:
     def destroy_magic(self):
         if self.current_magic:
             self.current_magic.kill()
-        self.current_attack = None
+        self.current_magic = None
 
     def run(self):
         self.visible_sprites.custom_draw(self.player)
