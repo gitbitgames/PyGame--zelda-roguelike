@@ -10,7 +10,7 @@ class Weapon(pygame.sprite.Sprite):
         self.image = pygame.image.load(full_path).convert_alpha()
 
 
-        ## Placement
+        ## Placement of weapon in regards to player sprite's current direction
         if direction == 'right':
             self.rect = self.image.get_rect(midleft = player.rect.midright + pygame.math.Vector2(0, 16))
         elif direction == 'left':

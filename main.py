@@ -5,14 +5,18 @@ from level import Level
 
 class Game:
     def __init__(self):
+        ### Pygame initialization
         pygame.mixer.pre_init(44100, 16, 2, 4096)
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+        ### Change to fullscreen
         # self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+
         pygame.display.set_caption('Zelda')
         self.clock = pygame.time.Clock()
 
-        # Add support for USB controllers
+        ### Add support for USB controllers
         # pygame.joystick.init()
         # joysticks = [ pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count()) ]
 

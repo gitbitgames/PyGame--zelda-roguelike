@@ -17,6 +17,7 @@ class Level:
         self.create_map()
         
         self.current_attack = None
+        self.current_magic = None
         self.ui = UI()
 
     def create_map(self):
@@ -49,17 +50,31 @@ class Level:
                             new_choice = graphics['objects'][int(col)]
                             Tile((x, y), [self.visible_sprites, self.obstacle_sprites], 'object', new_choice)
 
-        self.player = Player((2000, 1430), [self.visible_sprites], self.obstacle_sprites, self.create_attack, self.destroy_attack)
+        self.player = Player((2000, 1430),
+                    [self.visible_sprites],
+                    self.obstacle_sprites,
+                    self.create_attack,
+                    self.destroy_attack,
+                    self.create_magic,
+                    self.destroy_magic)
 
     def create_attack(self):
         self.current_attack = Weapon(self.player, [self.visible_sprites])
         
+    def create_magic(self, style, strength, cost):
+        print(style)
+        print(strength)
+        print(cost)
 
     def destroy_attack(self):
         if self.current_attack:
             self.current_attack.kill()
         self.current_attack = None
 
+    def destroy_magic(self):
+        if self.current_magic:
+            self.current_magic.kill()
+        self.current_attack = None
 
     def run(self):
         self.visible_sprites.custom_draw(self.player)

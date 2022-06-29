@@ -4,9 +4,19 @@ import pygame
 from settings import *
 from support import *
 from weapons import Weapon
+from magic import Magic
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, obstacle_sprites, create_attack, destroy_attack):
+    def __init__(self,
+                pos,
+                groups,
+                obstacle_sprites,
+                create_attack,
+                destroy_attack,
+                create_magic,
+                destroy_magic
+                ):
+
         super().__init__(groups)
 
         ### Player rectangle
@@ -26,14 +36,31 @@ class Player(pygame.sprite.Sprite):
         self.create_attack = create_attack
         self.destroy_attack = destroy_attack
         
-        # Weapon selection
+        ### Weapon selection
         self.weapon_index = 0
         self.weapon = list( weapon_data.keys() )[self.weapon_index]
         self.change_weapon = False
         self.change_timer = 0
         self.change_cooldown = 180
 
-        # stats
+        ### Magic attacks
+        self.magicking = False
+        self.magic_cooldown = 1000
+        self.magic_time = 0
+        self.create_magic = create_magic
+        self.destroy_magic = destroy_magic
+        
+
+        ### Magic selection
+        self.magic_index = 0
+        self.magic = list( magic_data.keys() )[self.magic_index]
+        self.change_magic = False
+        self.change_mag_timer = 0
+        self.change_mag_cooldown = 180
+        self.magic_cost = magic_data[self.magic]['cost']
+        self.magic_strength = magic_data[self.magic]['strength']
+
+        ### Stats
         self.stats = {
             'health': 100,
             'energy': 60,
@@ -41,18 +68,19 @@ class Player(pygame.sprite.Sprite):
             'magic': 4,
             'speed': 6
             }
-
         self.health = self.stats['health']
         self.energy = self.stats['energy']
         self.exp = 123
         self.speed = self.stats['speed']
+        self.magic_power = self.stats['magic']
 
-        ## Animations
+        ### Animations
         self.animations = self.import_player_assets()
         self.status = 'down_idle'
         self.frame_index = 0
         self.animation_speed = 0.15
 
+        ### Import all assets related to the player character's movement
     def import_player_assets(self):
         character_path = './img/player/'
         animations = {
@@ -69,13 +97,12 @@ class Player(pygame.sprite.Sprite):
             'up_attack': [],
             'down_attack': [],
         }
-
         for animation in animations.keys():
             full_path = character_path + animation
             animations[animation] = import_folder(full_path)
-
         return animations
 
+        ### Detect keyboard events
     def input(self):
         keys = pygame.key.get_pressed()
 
@@ -110,17 +137,22 @@ class Player(pygame.sprite.Sprite):
             self.change_weapon = True
             self.change_timer = pygame.time.get_ticks()
 
+        if keys[pygame.K_END] and not self.change_magic:
+            self._change_magic()
+            self.change_magic = True
+            self.change_mag_timer = pygame.time.get_ticks()
 
         if keys[pygame.K_SPACE] and not self.attacking:
             self.attacking = True
             self.attack_time = pygame.time.get_ticks()
             self.create_attack()
 
-        if keys[pygame.K_LCTRL] and not self.attacking:
-            self.attacking = True
-            self.attack_time = pygame.time.get_ticks()
-            self.create_attack()
+        if keys[pygame.K_LCTRL] and not self.magicking:
+            self.magicking = True
+            self.magic_time = pygame.time.get_ticks()
+            self.create_magic(self.style, self.magic_power, self.cost)
 
+        ### Retrieves a status on what the player sprite is currently doing
     def get_status(self):
         if self.direction.x == 0 and self.direction.y == 0:
             if not 'idle' in self.status and not 'attack' in self.status:
@@ -135,7 +167,8 @@ class Player(pygame.sprite.Sprite):
                 self.status = self.status + '_attack'
         elif 'attack' in self.status:
             self.status = self.status[:-7]
-            
+
+        ### Governs basic foot movement
     def move(self, speed):
         if self.direction.magnitude() != 0:
             self.direction = self.direction.normalize()
@@ -147,6 +180,7 @@ class Player(pygame.sprite.Sprite):
         self.collision('vertical')
         self.rect.center = self.hitbox.center
 
+        ### Collisions detection
     def collision(self, direction):
         if direction == 'horizontal':
             for sprite in self.obstacle_sprites:
@@ -164,6 +198,7 @@ class Player(pygame.sprite.Sprite):
                     if self.direction.y < 0:
                         self.hitbox.top = sprite.hitbox.bottom
 
+        ### Changes the weapon and updates player stats
     def _change_weapon(self, type):
         if type == 'down':
             self.weapon_index -= 1
@@ -180,6 +215,17 @@ class Player(pygame.sprite.Sprite):
         self.stats['speed'] = weapon_data[self.weapon]['speed']
         self.attack_cooldown = weapon_data[self.weapon]['cooldown']
 
+    def _change_magic(self):
+        length = len(magic_data.keys())
+        if self.magic_index < 0:
+            self.magic_index = length-1
+        if self.magic_index > length-1:
+            self.magic_index = 0
+        self.magic_power = magic_data[self.magic]['strength']
+        self.magic_cost = magic_data[self.magic]['cost']
+
+
+        ### Governs player cooldowns for both switching weapons/magic, using weapons/magic
     def cooldowns(self):
         current_time = pygame.time.get_ticks()
 
@@ -188,11 +234,20 @@ class Player(pygame.sprite.Sprite):
                 self.attacking = False
                 self.destroy_attack()
 
-        elif self.change_weapon:
+        if self.change_weapon:
             if current_time - self.change_timer >= self.change_cooldown:
                 self.change_weapon = False
 
+        if self.magicking:
+            if current_time - self.magic_time >= self.magic_cooldown:
+                self.magicking = False
+                self.destroy_magic()
 
+        if self.change_magic:
+            if current_time - self.change_mag_timer >= self.change_mag_cooldown:
+                self.change_magic = False
+
+        ### Animate the player
     def animate(self):
         animation = self.animations[self.status]
 
@@ -205,6 +260,7 @@ class Player(pygame.sprite.Sprite):
         self.image = animation[int(self.frame_index)]
         self.rect = self.image.get_rect(center = self.hitbox.center)
 
+        ### Continuously runs the 'always-on' player functions
     def update(self):
         self.input()
         self.cooldowns()
