@@ -1,32 +1,30 @@
 import sys
-from numpy import full
+from random import randint
 import pygame
 from settings import *
 from support import *
+from entity import Entity
+from enemy import Enemy
 from weapons import Weapon
-from magic import Magic
+from magic import MagicPlayer
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self,
+class Player(Entity):
+    def __init__(
+                self,
                 pos,
                 groups,
                 obstacle_sprites,
                 create_attack,
                 destroy_attack,
                 create_magic,
-                destroy_magic
                 ):
 
         super().__init__(groups)
 
         ### Player rectangle
-        self.image = pygame.image.load('graphics/player.png').convert_alpha()
+        self.image = pygame.image.load('./img/player/player.png').convert_alpha()
         self.rect = self.image.get_rect(topleft = pos)
         self.hitbox = self.rect.inflate(0, -26)
-
-        ### Movement
-        self.direction = pygame.math.Vector2()
-        self.speed = 5
         self.obstacle_sprites = obstacle_sprites
 
         ### Attacks
@@ -47,9 +45,7 @@ class Player(pygame.sprite.Sprite):
         self.magicking = False
         self.magic_cooldown = 1000
         self.magic_time = 0
-        self.create_magic = create_magic
-        self.destroy_magic = destroy_magic
-        
+        self.create_magic = create_magic        
 
         ### Magic selection
         self.magic_index = 0
@@ -66,19 +62,25 @@ class Player(pygame.sprite.Sprite):
             'energy': 60,
             'attack': 10,
             'magic': 4,
-            'speed': 6
+            'speed': 6,
+            'regen': 10
             }
         self.health = self.stats['health']
         self.energy = self.stats['energy']
-        self.exp = 123
-        self.speed = self.stats['speed'] + weapon_data[self.weapon]['speed']
+        self.exp = 0
+        self.level = 1
+        self.speed = self.stats['speed']
         self.magic_power = self.stats['magic'] + self.magic_strength
+        self.attack_power = self.stats['attack'] + weapon_data[self.weapon]['damage']
+        self.magic_regen = self.stats['regen']
+
+        self.can_be_attacked = False
+        self.hurt_time = 0
+        self.invuln_duration = 500
 
         ### Animations
         self.animations = self.import_player_assets()
         self.status = 'down_idle'
-        self.frame_index = 0
-        self.animation_speed = 0.15
 
         ### Import all assets related to the player character's movement
     def import_player_assets(self):
@@ -168,34 +170,28 @@ class Player(pygame.sprite.Sprite):
         elif 'attack' in self.status:
             self.status = self.status[:-7]
 
-        ### Governs basic foot movement
-    def move(self, speed):
-        if self.direction.magnitude() != 0:
-            self.direction = self.direction.normalize()
+    def level_up(self):
+        if self.exp >= 400:
+            # Stat rolls
+            for stat in self.stats:
+                num = (randint( 0, int((self.stats[stat]*0.1)) ))
+                if stat == 'health' and num > 10:
+                    num = 10
+                self.stats[stat] += num
+            self.update_stats(True)
 
-        self.hitbox.x += self.direction.x * speed
-        self.collision('horizontal')
-        self.hitbox.y += self.direction.y * speed
-        self.collision('vertical')
-        self.rect.center = self.hitbox.center
+            self.exp -= 400
+            self.level += 1
 
-        ### Collisions detection
-    def collision(self, direction):
-        if direction == 'horizontal':
-            for sprite in self.obstacle_sprites:
-                if sprite.hitbox.colliderect(self.hitbox):
-                    if self.direction.x > 0:
-                        self.hitbox.right = sprite.hitbox.left
-                    if self.direction.x < 0:
-                        self.hitbox.left = sprite.hitbox.right
+    def update_stats(self, levelup):
+        if levelup:
+            self.health = self.stats['health']
+            self.energy = self.stats['energy']
 
-        if direction == 'vertical':
-            for sprite in self.obstacle_sprites:
-                if sprite.hitbox.colliderect(self.hitbox):
-                    if self.direction.y > 0:
-                        self.hitbox.bottom = sprite.hitbox.top
-                    if self.direction.y < 0:
-                        self.hitbox.top = sprite.hitbox.bottom
+        self.speed = self.stats['speed']
+        self.magic_power = self.stats['magic'] + self.magic_strength
+        self.attack_power = self.stats['attack'] + weapon_data[self.weapon]['damage']
+        self.magic_regen = self.stats['regen']
 
         ### Changes the weapon and updates player stats
     def _change_weapon(self, type):
@@ -210,9 +206,9 @@ class Player(pygame.sprite.Sprite):
         if self.weapon_index > length-1:
             self.weapon_index = 0
         self.weapon = list( weapon_data.keys() )[self.weapon_index]
-        self.stats['attack'] = weapon_data[self.weapon]['damage']
         self.stats['speed'] = weapon_data[self.weapon]['speed']
         self.attack_cooldown = weapon_data[self.weapon]['cooldown']
+        self.attack_power = self.stats['attack'] + weapon_data[self.weapon]['damage']
 
     def _change_magic(self):
         self.magic_index += 1
@@ -221,9 +217,16 @@ class Player(pygame.sprite.Sprite):
         if self.magic_index > length-1:
             self.magic_index = 0
         self.style = list( magic_data.keys() )[self.magic_index]
-        self.magic_power = magic_data[self.style]['strength']
+        self.magic_strength = magic_data[self.style]['strength']
         self.magic_cost = magic_data[self.style]['cost']
+        self.magic_power = self.stats['magic'] + self.magic_strength
 
+    def regenerate_magic(self):
+        if self.energy < self.stats['energy']:
+            self.energy += self.magic_regen * 0.0022
+        if self.magic_regen <= 0:
+            self.energy += 1
+            self.magic_regen = self.stats['regen']
 
         ### Governs player cooldowns for both switching weapons/magic, using weapons/magic
     def cooldowns(self):
@@ -241,11 +244,14 @@ class Player(pygame.sprite.Sprite):
         if self.magicking:
             if current_time - self.magic_time >= self.magic_cooldown:
                 self.magicking = False
-                self.destroy_magic()
 
         if self.change_magic:
             if current_time - self.change_mag_timer >= self.change_mag_cooldown:
                 self.change_magic = False
+
+        if not self.can_be_attacked:
+            if current_time - self.hurt_time >= self.invuln_duration:
+                self.can_be_attacked = True
 
         ### Animate the player
     def animate(self):
@@ -260,6 +266,12 @@ class Player(pygame.sprite.Sprite):
         self.image = animation[int(self.frame_index)]
         self.rect = self.image.get_rect(center = self.hitbox.center)
 
+        if not self.can_be_attacked:
+            alpha = self.wave_value()
+            self.image.set_alpha(alpha)
+        else:
+            self.image.set_alpha(255)
+
         ### Continuously runs the 'always-on' player functions
     def update(self):
         self.input()
@@ -267,3 +279,5 @@ class Player(pygame.sprite.Sprite):
         self.get_status()
         self.animate()
         self.move(self.speed)
+        self.regenerate_magic()
+        self.level_up()
